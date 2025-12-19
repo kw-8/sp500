@@ -1,1 +1,2 @@
-# sp500
+# sp500: Factor Backtesting Framework
+WIP
