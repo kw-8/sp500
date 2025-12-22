@@ -1,0 +1,33 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data and results (if large)
+data/*.csv
+data/*.parquet
+results/*.csv
+results/*.png
+results/*.pdf
+
+# Personal notes
+personal.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
