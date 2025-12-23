@@ -22,7 +22,7 @@ def fetch_stock_data(tickers, start_date='2015-01-01', end_date='2024-12-31'):
         daily_prices = daily_data['Close']
     
     daily_prices.index = pd.to_datetime(daily_prices.index).tz_localize(None) # Standardize index (no timezone)
-    monthly_prices = daily_prices.resample('M').last()
+    monthly_prices = daily_prices.resample('ME').last()
 
     # Fetch fundamentals
     earnings_dict = {}
@@ -84,7 +84,7 @@ def fetch_stock_data(tickers, start_date='2015-01-01', end_date='2024-12-31'):
 # -------- S&P 500 Stocks (Tickers) Used --------
 # Top 100 S&P 500 stocks by market cap (manual list, or scrape)
 tickers = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B', 'UNH', 'XOM',
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK-B', 'UNH', 'XOM',
     'JNJ', 'JPM', 'V', 'PG', 'MA', 'HD', 'CVX', 'MRK', 'ABBV', 'PEP',
     'COST', 'KO', 'AVGO', 'TMO', 'WMT', 'MCD', 'CSCO', 'ACN', 'ABT', 'DHR',
     'LIN', 'VZ', 'NKE', 'ADBE', 'TXN', 'NEE', 'CRM', 'PM', 'DIS', 'CMCSA',
