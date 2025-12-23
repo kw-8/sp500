@@ -2,6 +2,9 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
+# -------- -------- -------- -------- -------- --------
+#        Get Stock Data from Yahoo Finance
+# -------- -------- -------- -------- -------- --------
 def fetch_stock_data(tickers, start_date='2015-01-01', end_date='2024-12-31'):
     """
     Fetch prices and fundamental data for factor analysis.
@@ -81,8 +84,10 @@ def fetch_stock_data(tickers, start_date='2015-01-01', end_date='2024-12-31'):
     
     return daily_prices, monthly_prices, earnings, balance_sheet_dict
 
-# -------- S&P 500 Stocks (Tickers) Used --------
-# Top 100 S&P 500 stocks by market cap (manual list, or scrape)
+# -------- -------- -------- -------- -------- --------
+#       S&P 500 Stocks (Tickers) Used
+#           (top 100 by market cap)
+# -------- -------- -------- -------- -------- --------
 tickers = [
     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK-B', 'UNH', 'XOM',
     'JNJ', 'JPM', 'V', 'PG', 'MA', 'HD', 'CVX', 'MRK', 'ABBV', 'PEP',
