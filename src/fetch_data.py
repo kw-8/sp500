@@ -1,11 +1,10 @@
 import yfinance as yf
 import pandas as pd
-import numpy as np
 
 # -------- -------- -------- -------- -------- --------
 #        Get Stock Data from Yahoo Finance
 # -------- -------- -------- -------- -------- --------
-def fetch_stock_data(tickers, start_date='2015-01-01', end_date='2024-12-31'):
+def fetch_stock_data(tickers, start_date='2021-01-01', end_date='2024-12-31'):
     """
     Fetch prices and fundamental data for factor analysis.
     
@@ -16,13 +15,8 @@ def fetch_stock_data(tickers, start_date='2015-01-01', end_date='2024-12-31'):
     if isinstance(tickers, str): tickers = [tickers] # work with list even if input one ticker
     
     daily_data = yf.download(tickers, start=start_date, end=end_date,progress=False, interval="1d")
-    
-    # Get daily close prices (MultiIndex)
-    if len(tickers) == 1: # transform for single ticker b/c yf returns simple columns vs multiindex
-        daily_prices = daily_data[['Close']].copy()
-        daily_prices.columns = tickers
-    else:
-        daily_prices = daily_data['Close']
+    daily_prices = daily_data['Close'].copy()
+    daily_prices.columns = [str(col) for col in daily_prices.columns]
     
     daily_prices.index = pd.to_datetime(daily_prices.index).tz_localize(None) # Standardize index (no timezone)
     monthly_prices = daily_prices.resample('ME').last()
@@ -59,7 +53,7 @@ def fetch_stock_data(tickers, start_date='2015-01-01', end_date='2024-12-31'):
             continue
     
     # Earnings dict -> df (dates × tickers)
-    earnings = pd.DataFrame(earnings_dict)
+    earnings = pd.DataFrame(earnings_dict).reindex(monthly_prices.index).ffill()
     earnings.index.name = 'Date'
     
     # Sort df by date
@@ -84,20 +78,21 @@ def fetch_stock_data(tickers, start_date='2015-01-01', end_date='2024-12-31'):
     
     return daily_prices, monthly_prices, earnings, balance_sheet_dict
 
-# -------- -------- -------- -------- -------- --------
-#       S&P 500 Stocks (Tickers) Used
-#           (top 100 by market cap)
-# -------- -------- -------- -------- -------- --------
-tickers = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK-B', 'UNH', 'XOM',
-    'JNJ', 'JPM', 'V', 'PG', 'MA', 'HD', 'CVX', 'MRK', 'ABBV', 'PEP',
-    'COST', 'KO', 'AVGO', 'TMO', 'WMT', 'MCD', 'CSCO', 'ACN', 'ABT', 'DHR',
-    'LIN', 'VZ', 'NKE', 'ADBE', 'TXN', 'NEE', 'CRM', 'PM', 'DIS', 'CMCSA',
-    'ORCL', 'WFC', 'HON', 'UPS', 'BMY', 'RTX', 'INTC', 'QCOM', 'UNP', 'AMD',
-    'T', 'SPGI', 'LOW', 'INTU', 'BA', 'CAT', 'ELV', 'GE', 'SBUX', 'DE',
-    'PFE', 'AXP', 'BKNG', 'BLK', 'MDT', 'ADP', 'TJX', 'GILD', 'AMGN', 'SYK',
-    'CVS', 'MMC', 'ADI', 'CI', 'VRTX', 'AMT', 'C', 'MDLZ', 'ZTS', 'ISRG',
-    'NOW', 'MO', 'PLD', 'REGN', 'DUK', 'SO', 'BDX', 'TGT', 'CB', 'SCHW',
-    'ETN', 'ITW', 'BSX', 'USB', 'HCA', 'SLB', 'GD', 'MMM', 'EOG', 'NOC'
-]
-daily_prices, monthly_prices, earnings, balance_sheet_dict = fetch_stock_data(tickers)
+# # -------- -------- -------- -------- -------- --------
+# #       S&P 500 Stocks (Tickers) Used
+# #           (top 100 by market cap)
+# # -------- -------- -------- -------- -------- --------
+# if __name__ == "__main__":
+#     tickers = [
+#         'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK-B', 'UNH', 'XOM',
+#         'JNJ', 'JPM', 'V', 'PG', 'MA', 'HD', 'CVX', 'MRK', 'ABBV', 'PEP',
+#         'COST', 'KO', 'AVGO', 'TMO', 'WMT', 'MCD', 'CSCO', 'ACN', 'ABT', 'DHR',
+#         'LIN', 'VZ', 'NKE', 'ADBE', 'TXN', 'NEE', 'CRM', 'PM', 'DIS', 'CMCSA',
+#         'ORCL', 'WFC', 'HON', 'UPS', 'BMY', 'RTX', 'INTC', 'QCOM', 'UNP', 'AMD',
+#         'T', 'SPGI', 'LOW', 'INTU', 'BA', 'CAT', 'ELV', 'GE', 'SBUX', 'DE',
+#         'PFE', 'AXP', 'BKNG', 'BLK', 'MDT', 'ADP', 'TJX', 'GILD', 'AMGN', 'SYK',
+#         'CVS', 'MMC', 'ADI', 'CI', 'VRTX', 'AMT', 'C', 'MDLZ', 'ZTS', 'ISRG',
+#         'NOW', 'MO', 'PLD', 'REGN', 'DUK', 'SO', 'BDX', 'TGT', 'CB', 'SCHW',
+#         'ETN', 'ITW', 'BSX', 'USB', 'HCA', 'SLB', 'GD', 'MMM', 'EOG', 'NOC'
+#     ]
+#     daily_prices, monthly_prices, earnings, balance_sheet_dict = fetch_stock_data(tickers)
