@@ -3,6 +3,9 @@ import numpy as np
 import yfinance as yf
 from sklearn.linear_model import LinearRegression
 
+# -------- -------- ------- -------- --------
+#                   FACTORS
+# -------- -------- ------- -------- --------
 # MOMENTUM
 def momentum(monthly_prices, lookback=12, skip=1):
     '''
@@ -11,10 +14,8 @@ def momentum(monthly_prices, lookback=12, skip=1):
     lookback:   number of months to cover
     skip:       number of (recent) months to exclude
     '''
-    momentum_signal = monthly_prices.pct_change(lookback).shift(skip)
-    momentum_norm = momentum_signal.apply(lambda row: (row - row.mean()) / row.std()
-                                            if row.std() > 0 else 0, axis=1)
-    return momentum_norm
+    momentum_signal = monthly_prices.shift(skip).pct_change(lookback)
+    return z_score_normalize(momentum_signal)
 
 # TOTAL VOLATILITY
 def volatility(daily_returns, window=63):
@@ -51,8 +52,6 @@ def volatility_idiosyncratic(daily_prices, market_ticker='SPY', window=63, min_o
     # Initialize output
     idio_vol = pd.DataFrame(index=daily_returns.index, columns=daily_returns.columns)
     
-    print(f"Calculating idiosyncratic volatility (rolling {window} days)...")
-    
     for ticker in daily_returns.columns:
         stock_returns = daily_returns[ticker].dropna()
         
@@ -86,10 +85,7 @@ def volatility_idiosyncratic(daily_prices, market_ticker='SPY', window=63, min_o
     idio_vol_annual = idio_vol * np.sqrt(252)
     idio_vol_monthly = idio_vol_annual.resample('ME').last()
     idio_vol_monthly = idio_vol_monthly.reindex(daily_prices.resample('ME').last().index)
-    # Z-score
-    idio_norm = idio_vol_monthly.apply(lambda row: -(row - row.mean()) / row.std()
-                                        if row.std() > 0 else 0, axis=1)
-    return idio_norm
+    return z_score_normalize(idio_vol_monthly)
 
 # VALUE: E/P (Earnings-to-Price) TTM with 2 month lag
 def value_earnings_to_price(monthly_prices, earnings, lag_months=2):
@@ -102,9 +98,7 @@ def value_earnings_to_price(monthly_prices, earnings, lag_months=2):
 
     ep_ratios = earnings_lagged / monthly_prices
     ep_ratios = ep_ratios.replace([np.inf, -np.inf], np.nan)    # handle invalid values
-    ep_norm = ep_ratios.apply(lambda row: (row - row.mean()) / row.std()
-                                if row.std() > 0 else 0, axis=1)
-    return ep_norm
+    return z_score_normalize(ep_ratios)
 
 # QUALITY: Gross Profitability
 def quality_gross_profitability(monthly_prices, balance_sheets):
@@ -119,7 +113,7 @@ def quality_gross_profitability(monthly_prices, balance_sheets):
     for ticker in monthly_prices.columns:
         if ticker not in balance_sheets: continue # skip to next ticker
         bs_df = balance_sheets[ticker]
-        
+
         # Find gross profit and total assets columns
         gp_col, ta_col = None, None
 
@@ -144,7 +138,44 @@ def quality_gross_profitability(monthly_prices, balance_sheets):
             print(f"Warning: Could not calculate GP for {ticker}: {e}")
             continue
     
-    gp_norm = gp_ratios.apply(lambda row: (row - row.mean()) / row.std()
-                                if row.std() > 0 else 0, axis=1)
+    return z_score_normalize(gp_ratios)
+
+# -------- -------- ------- -------- --------
+#      CALCULATE ALL THE FACTOR SCORES
+# -------- -------- ------- -------- --------
+def calculate_all_factors(daily_prices, monthly_prices, earnings, balance_sheets):
+    mom_scores = momentum(monthly_prices, lookback=12, skip=1)
+    val_scores = value_earnings_to_price(monthly_prices, earnings, lag_months=2)
+    qual_scores = quality_gross_profitability(monthly_prices, balance_sheets)
+    vol_scores = volatility_idiosyncratic(daily_prices)
     
-    return gp_norm
+    factors = {
+        'momentum': mom_scores,
+        'value': val_scores,
+        'quality': qual_scores,
+        'volatility': vol_scores,
+    }
+    return factors
+
+# -------- -------- ------- -------- --------
+#               HELPER FUNCTIONS
+# -------- -------- ------- -------- --------
+def z_score_normalize(df):
+    """
+    Z-score normalization: each row (time period) normalized across columns (stocks)
+
+    df: DataFrame with dates × tickers
+    normalized: DataFrame with z-scores (mean=0, std=1 for each row)
+    """
+    # Row means and stds
+    row_means = df.mean(axis=1)
+    row_stds = df.std(axis=1)
+    
+    # Handle division by zero (replace 0 with NaN, then fill with 0)
+    safe_stds = row_stds.replace(0, np.nan)
+    
+    # Z-score: (x - mean) / std
+    normalized = df.sub(row_means, axis=0).div(safe_stds, axis=0)
+    
+    # Fill NaN (where std=0) with 0 (all values equal)
+    return normalized.fillna(0)
