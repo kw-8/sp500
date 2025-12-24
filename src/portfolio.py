@@ -10,13 +10,13 @@ def construct_quantile_portfolio(prices, factor_scores, long_pct=0.2, short_pct=
         prices:         DataFrame of monthly prices (dates × tickers)
         factor_scores:  DataFrame of factor scores (dates × tickers)
         long_pct:       percentage of stocks to go long (0.2 = top 20%)
-        short_pct:      percentage of stocks to short (0.0 = bottom 0% aka long-only)
+        short_pct:      percentage of stocks to short (0.0 = bottom 0%)
     
     Returns:
         portfolio_returns: Series of portfolio returns
         portfolio_weights: DataFrame of portfolio weights each period
     """
-    forward_returns = prices.pct_change().shift(-1) # returns after this time period
+    forward_returns = prices.pct_change() # monthly returns
     portfolio_returns = []
     all_weights = []
     
@@ -29,15 +29,13 @@ def construct_quantile_portfolio(prices, factor_scores, long_pct=0.2, short_pct=
     for i in range(len(factor_scores) - 1):
         current_date = factor_scores.index[i]
         next_date = factor_scores.index[i + 1]
-        print(factor_scores)
-        print(current_date)
-        print(factor_scores.loc[current_date])
+
         scores = factor_scores.loc[current_date].dropna()
         
         port_return = np.nan
         weights = pd.Series()
         
-        if len(scores) >= 20: # enough stocks
+        if len(scores) >= 20:
             weights = pd.Series(0.0, index=scores.index)
             
             # Select top stocks
