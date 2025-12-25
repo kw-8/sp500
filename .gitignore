@@ -27,6 +27,10 @@ results/*.pdf
 # Personal notes
 personal.txt
 
+# Environment variables (API keys, secrets)
+.env
+.env.local
+
 # OS
 .DS_Store
 Thumbs.db
