@@ -6,7 +6,7 @@ from portfolio import factor_portfolios, combined_portfolio, benchmark_returns
 from factors import calculate_all_factors
 from metrics import annualized_return, annualized_volatility, create_summary_table
 
-def analyze_factor_strategies(daily_prices, monthly_prices, earnings, balance_sheets):
+def analyze_factor_strategies(daily_prices, monthly_prices, earnings, income_stmts, balance_sheets):
     """Analysis pipeline with visualizations"""
     print("=" * 60)
     print("FACTOR PORTFOLIO ANALYSIS")
@@ -14,7 +14,7 @@ def analyze_factor_strategies(daily_prices, monthly_prices, earnings, balance_sh
 
     # 1. Calculate factors
     print("\nCalculating factor signals...")
-    factors = calculate_all_factors(daily_prices, monthly_prices, earnings, balance_sheets)
+    factors = calculate_all_factors(daily_prices, monthly_prices, earnings, income_stmts, balance_sheets)
     
     # 2. Construct individual factor portfolios
     print("\nConstructing individual factor portfolios...")
@@ -206,12 +206,12 @@ if __name__ == "__main__":
     ]
     
     print("Fetching data...")
-    daily_prices, monthly_prices, earnings, balance_sheets = fetch_stock_data(
-        tickers, '2010-01-01', '2024-12-31'
+    daily_prices, monthly_prices, earnings, income_stmts, balance_sheets = fetch_stock_data(
+        tickers, '2000-01-01', '2025-12-31'
     )
     
     # Run analysis
-    returns_df, factors = analyze_factor_strategies(daily_prices, monthly_prices, earnings, balance_sheets)
+    returns_df, factors = analyze_factor_strategies(daily_prices, monthly_prices, earnings, income_stmts, balance_sheets)
     
     # Summary table
     print("\n" + "=" * 60)

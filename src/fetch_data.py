@@ -15,31 +15,35 @@ def fetch_stock_data(tickers, start_date='2021-01-01', end_date='2024-12-31'):
     if isinstance(tickers, str): tickers = [tickers] # work with list even if input one ticker
     
     daily_data = yf.download(tickers, start=start_date, end=end_date,progress=False, interval="1d")
-    daily_prices = daily_data['Close'].copy()
-    daily_prices.columns = [str(col) for col in daily_prices.columns]
+    
+    if len(tickers) == 1:
+        daily_prices = daily_data[['Close']].copy()
+        daily_prices.columns = tickers
+    else:
+        daily_prices = daily_data['Close'].copy()
     
     daily_prices.index = pd.to_datetime(daily_prices.index).tz_localize(None) # Standardize index (no timezone)
     monthly_prices = daily_prices.resample('ME').last()
 
     # Fetch fundamentals
     earnings_dict = {}
+    income_stmt_dict = {}
     balance_sheet_dict = {}
     
     for ticker in tickers:
         try:
             stock = yf.Ticker(ticker)
             
-            # Quarterly financials (earnings)
-            qtr_financials = stock.quarterly_financials
-            if qtr_financials is not None and not qtr_financials.empty:
-                qtr_financials_t = qtr_financials.T # transpose: dates index, financial items columns
-                qtr_financials_t.index = pd.to_datetime(qtr_financials_t.index).tz_localize(None)
+            # Quarterly income statement
+            qtr_income = stock.quarterly_income_stmt
+            if qtr_income is not None and not qtr_income.empty:
+                qtr_income_t = qtr_income.T
+                qtr_income_t.index = pd.to_datetime(qtr_income_t.index).tz_localize(None)
+                income_stmt_dict[ticker] = qtr_income_t
                 
-                # Net income -> series
-                if 'Net Income' in qtr_financials_t.columns:
-                    earnings_series = qtr_financials_t['Net Income']
-                    earnings_series.name = ticker
-                    earnings_dict[ticker] = earnings_series
+                # Extract Net Income
+                if 'Net Income' in qtr_income_t.columns:
+                    earnings_dict[ticker] = qtr_income_t['Net Income']
             
             # Quarterly balance sheet
             qtr_balance = stock.quarterly_balance_sheet
@@ -52,9 +56,11 @@ def fetch_stock_data(tickers, start_date='2021-01-01', end_date='2024-12-31'):
             print(f"  Warning: Could not fetch fundamentals for {ticker}: {e}")
             continue
     
-    # Earnings dict -> df (dates × tickers)
-    earnings = pd.DataFrame(earnings_dict).reindex(monthly_prices.index).ffill()
-    earnings.index.name = 'Date'
+    # Earnings (dict) -> df (dates × tickers)
+    earnings = pd.DataFrame(earnings_dict)
+    if not earnings.empty:
+        earnings.index = pd.to_datetime(earnings.index).tz_localize(None)
+        earnings = earnings.sort_index()
     
     # Sort df by date
     daily_prices = daily_prices.sort_index()
@@ -63,20 +69,25 @@ def fetch_stock_data(tickers, start_date='2021-01-01', end_date='2024-12-31'):
     
     # Only keep tickers w/ both price and earnings data
     valid_tickers = monthly_prices.columns.intersection(earnings.columns)
+    if len(valid_tickers) == 0:
+        print("⚠️  WARNING: No tickers have both price and earnings data!")
+        return daily_prices, monthly_prices, pd.DataFrame(), {}
     daily_prices = daily_prices[valid_tickers]
     monthly_prices = monthly_prices[valid_tickers]
     earnings = earnings[valid_tickers]
     
-    # Filter balance sheets to only valid tickers
+    # Filter other dicts
+    income_stmt_dict = {k: v for k, v in income_stmt_dict.items() if k in valid_tickers}
     balance_sheet_dict = {k: v for k, v in balance_sheet_dict.items() if k in valid_tickers}
     
-    print(f"Successfully loaded {len(valid_tickers)} tickers with complete data")
-    print(f"Daily prices:  {daily_prices.shape[0]} days × {daily_prices.shape[1]} stocks")
-    print(f"Monthly prices: {monthly_prices.shape[0]} months × {monthly_prices.shape[1]} stocks")
-    print(f"Earnings:      {earnings.shape[0]} quarters")
-    print(f"Balance sheets: {len(balance_sheet_dict)} tickers")
+    print(f"✓ Loaded {len(valid_tickers)} tickers with complete data")
+    print(f"  Daily prices:   {daily_prices.shape[0]} days × {daily_prices.shape[1]} stocks")
+    print(f"  Monthly prices: {monthly_prices.shape[0]} months × {monthly_prices.shape[1]} stocks")
+    print(f"  Earnings data:  {len(earnings)} quarters")
+    print(f"  Income stmts:   {len(income_stmt_dict)} tickers")
+    print(f"  Balance sheets: {len(balance_sheet_dict)} tickers")
     
-    return daily_prices, monthly_prices, earnings, balance_sheet_dict
+    return daily_prices, monthly_prices, earnings, income_stmt_dict, balance_sheet_dict
 
 # # -------- -------- -------- -------- -------- --------
 # #       S&P 500 Stocks (Tickers) Used
