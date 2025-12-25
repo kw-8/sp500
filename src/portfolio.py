@@ -142,16 +142,30 @@ def combined_portfolio(prices, factors_dict, method='equal_weight', weights=None
     else:
         raise ValueError(f"Unknown method: {method}")
 
+
+# BENCHMARK RETURNS
 def benchmark_returns(benchmark_ticker='SPY', start_date=None, end_date=None):
-    """
-    Get benchmark returns (e.g., SPY).
-    """
-    if start_date and end_date:
-        spy = yf.download(benchmark_ticker, start=start_date, end=end_date, interval='1mo')
-    else:
-        spy = yf.download(benchmark_ticker, period='max', interval='1mo')
-    
-    spy_returns = spy['Adj Close'].pct_change()
-    spy_returns.name = 'SPY'
-    
-    return spy_returns
+    """Get benchmark returns"""
+    try:
+        spy = yf.download(benchmark_ticker, start=start_date, end=end_date, 
+                            interval='1mo', progress=False)
+        
+        # Handle MultiIndex for single stock
+        if isinstance(spy.columns, pd.MultiIndex):
+            spy = spy.droplevel(1, axis=1)  # Remove ticker level
+        
+        # Get Close prices
+        spy_prices = spy['Close']
+        spy_returns = spy_prices.pct_change()
+        
+        # Standardize index (remove timezone, ensure monthly end dates)
+        spy_returns.index = pd.to_datetime(spy_returns.index).tz_localize(None)
+        spy_returns = spy_returns.resample('ME').last()  # Ensure monthly end dates
+        
+        spy_returns.name = 'SPY'
+        
+        return spy_returns
+        
+    except Exception as e:
+        print(f"Failed to load SPY: {e}")
+        return pd.Series([], name='SPY')

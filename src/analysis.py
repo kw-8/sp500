@@ -191,6 +191,12 @@ def create_visualizations(returns_df, factors, save_dir='./results'):
     
     print("\nAll visualizations created!")
 
+
+
+
+# -------- -------- ------- -------- --------
+#        BACKTEST SAMPLE: RUN ANALYSIS
+# -------- -------- ------- -------- --------
 if __name__ == "__main__":
     tickers = [
         'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK-B', 'UNH', 'XOM',
