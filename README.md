@@ -15,7 +15,7 @@ Quality has a couple different possible implementations as well. In this case, I
 1. **Momentum (12-1 month)**: 12-month price return excluding most recent month to avoid short-term reversals
 $$R_{mom} = \frac{P_{t-1}}{P_{t-13}} - 1$$
 2. **Value (Earnings-to-Price)**: Trailing 12-month earnings-to-price ratio with 1-quarter lag to reduce look-ahead bias
-$\text{E/P}=\frac{\text{Earnings}}{\text{Market Cap}}$
+$$\text{E/P}=\frac{\text{Earnings}}{\text{Market Cap}}$$
 3. **Quality (Gross Profitability)**: Gross profit to total assets ratio as profitability measure
 $$\text{GP/A}=\frac{\text{Gross Profits}}{\text{Total Assets}}$$
 4. **Volatility (Total)**: Rolling standard deviation of returns
