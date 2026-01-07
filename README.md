@@ -73,7 +73,7 @@ The risk-free rate has changed throughout history for various periods of time, a
 Despite high portfolio return correlations (0.57-0.98), the combined portfolio achieves superior risk-adjusted returns (Sharpe 1.19 vs. 0.50). This demonstrates that even with a small universe, factors capture different return drivers.
 
 **Factor Signal Independence:**
-Cross-sectional factor correlations are near zero (0.00-0.04). This confirms that momentum, value, quality, and volatility rank stocks differently. The high *portfolio return* correlations stem from:
+The high *portfolio return* correlations stem from:
 - Small universe (100 stocks → only 10 holdings per portfolio → high overlap)
 - Large-cap bias (mega-cap tech dominates multiple factors)
 
